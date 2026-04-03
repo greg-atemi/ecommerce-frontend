@@ -1,61 +1,125 @@
-import React, { createContext, useContext, useState, useMemo } from "react";
-import type { User } from "@/types";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { authApi } from "@/api/authApi";
 
-interface AuthContextValue {
-  user: User | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  isLoading: boolean;
+interface User {
+  email: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  role: string;
+  avatarUrl?: string;
+  addresses?: {
+    line1: string;
+    city: string;
+    state: string;
+    country: string;
+  }[];
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;   // ← added
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string
+  ) => Promise<void>;
+  logout: () => void;
+}
 
-// Mock user for development
-const MOCK_USER: User = {
-  id: "user-1",
-  email: "greg@systechlimited.com",
-  name: "Greg Atemi",
-  avatarUrl: "https://api.dicebear.com/7.x/initials/svg?seed=GA",
-  addresses: [
-    {
-      id: "addr-1",
-      line1: "14 Waiyaki Way",
-      city: "Nairobi",
-      state: "Nairobi County",
-      postalCode: "00100",
-      country: "KE",
-      isDefault: true,
-    },
-  ],
-};
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      user,
-      isAuthenticated: !!user,
-      isLoading,
-      login: async (email: string, _password: string) => {
-        setIsLoading(true);
-        // Simulate API call
-        await new Promise((r) => setTimeout(r, 800));
-        setUser({ ...MOCK_USER, email });
-        setIsLoading(false);
-      },
-      logout: () => setUser(null),
-    }),
-    [user, isLoading]
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      const restored = getUserFromToken(token);
+      if (restored) setUser(restored);
+    }
+    setIsLoading(false);
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const { data } = await authApi.login({ email, password });
+      localStorage.setItem("accessToken", data.accessToken);
+      // ✅ Bug 1 fix — decode token instead of setUser({ email })
+      const decoded = getUserFromToken(data.accessToken);
+      if (decoded) setUser(decoded);
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message ?? "Login failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string
+  ) => {
+    setIsLoading(true);
+    try {
+      const { data } = await authApi.register({ firstName, lastName, email, password });
+      localStorage.setItem("accessToken", data.accessToken);
+      // ✅ Same fix for register
+      const decoded = getUserFromToken(data.accessToken);
+      if (decoded) setUser(decoded);
+    } catch (err: any) {
+      throw new Error(err.response?.data?.message ?? "Registration failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("accessToken");
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: user !== null,   // ← derived, never stale
+        isLoading,
+        login,
+        register,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within <AuthProvider>");
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
+}
+
+function getUserFromToken(token: string): User | null {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return {
+      email: payload.sub,
+      firstName: payload.firstName ?? "",
+      lastName: payload.lastName ?? "",
+      name: `${payload.firstName ?? ""} ${payload.lastName ?? ""}`.trim(),
+      role: payload.role ?? "USER",
+      avatarUrl: undefined,
+      addresses: [],
+    };
+  } catch {
+    return null;
+  }
 }
