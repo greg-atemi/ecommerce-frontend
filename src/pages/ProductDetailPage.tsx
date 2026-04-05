@@ -5,25 +5,48 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useCart } from "@/context/CartContext";
-import { getProductById, formatPrice, products } from "@/data/products";
+import { formatPrice } from "@/data/products";           // keep formatPrice helper
 import { ProductCard } from "@/components/ecommerce/ProductCard";
 import { ProductReviews } from "@/components/ecommerce/ProductReviews";
-import { getReviewsForProduct } from "@/data/reviews";
+import { useProduct } from "@/hooks/useProduct";          // ← new
+import { useProducts } from "@/hooks/useProducts";        // ← for related products
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const product = getProductById(id ?? "");
+  const { product, isLoading, error } = useProduct(id ?? "");
   const { addItem, toggleCart } = useCart();
 
   const [mainImg, setMainImg] = useState(0);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [qty, setQty] = useState(1);
 
-  if (!product) return <Navigate to="/products" replace />;
+  // Fetch related products from the same category
+  const { products: related } = useProducts({
+    category: product?.category ?? undefined,
+    size: 4,
+  });
+  const relatedProducts = related.filter((p) => p.id !== product?.id);
+
+  // ── Loading state ─────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="container py-8">
+        <div className="grid gap-10 lg:grid-cols-2">
+          <div className="aspect-square rounded-lg bg-muted animate-pulse" />
+          <div className="space-y-4">
+            <div className="h-6 w-24 rounded bg-muted animate-pulse" />
+            <div className="h-10 w-3/4 rounded bg-muted animate-pulse" />
+            <div className="h-8 w-32 rounded bg-muted animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error / not found ─────────────────────────────────────────────────────
+  if (error || !product) return <Navigate to="/products" replace />;
 
   const discount = product.compareAtPrice
     ? Math.round((1 - product.price / product.compareAtPrice) * 100)
@@ -33,9 +56,6 @@ export function ProductDetailPage() {
     addItem(product, qty, selectedVariants);
     toggleCart();
   };
-
-  const related = products.filter((p) => p.category === product.category && p.id !== product.id);
-  const productReviews = getReviewsForProduct(product.id);
 
   return (
     <div className="container py-8">
@@ -80,12 +100,14 @@ export function ProductDetailPage() {
           <div>
             <Badge variant="secondary">{product.category}</Badge>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">{product.name}</h1>
-
-            {/* Rating */}
             <div className="mt-2 flex items-center gap-2">
               <div className="flex">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className={`h-4 w-4 ${i < Math.floor(product.rating) ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+                  <Star key={i} className={`h-4 w-4 ${
+                    i < Math.floor(product.rating)
+                      ? "fill-amber-400 text-amber-400"
+                      : "text-muted-foreground"
+                  }`} />
                 ))}
               </div>
               <span className="text-sm text-muted-foreground">
@@ -153,12 +175,10 @@ export function ProductDetailPage() {
                 className="px-3 py-2 hover:bg-muted transition-colors"
               >+</button>
             </div>
-
             <Button className="flex-1 gap-2" onClick={handleAddToCart} disabled={product.stock === 0}>
               <ShoppingCart className="h-4 w-4" />
               {product.stock === 0 ? "Out of stock" : "Add to cart"}
             </Button>
-
             <Button variant="outline" size="icon">
               <Heart className="h-4 w-4" />
             </Button>
@@ -192,7 +212,9 @@ export function ProductDetailPage() {
         <TabsList>
           <TabsTrigger value="description">Description</TabsTrigger>
           <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="reviews">Reviews ({productReviews.length || product.reviewCount})</TabsTrigger>
+          <TabsTrigger value="reviews">
+            Reviews ({product.reviewCount})
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="description" className="mt-4 prose max-w-none">
           <p className="text-muted-foreground leading-relaxed">{product.description}</p>
@@ -221,11 +243,11 @@ export function ProductDetailPage() {
       </Tabs>
 
       {/* Related */}
-      {related.length > 0 && (
+      {relatedProducts.length > 0 && (
         <section className="mt-16">
           <h2 className="text-xl font-bold tracking-tight">You might also like</h2>
           <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {related.map((p) => <ProductCard key={p.id} product={p} />)}
+            {relatedProducts.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         </section>
       )}

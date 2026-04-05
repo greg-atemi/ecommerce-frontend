@@ -9,7 +9,7 @@ export const products: Product[] = [
     compareAtPrice: 15999,
     images: [
       "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800",
-      "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800",
+      "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800"
     ],
     category: "Footwear",
     tags: ["leather", "casual", "classic"],
@@ -77,8 +77,9 @@ export const products: Product[] = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Format cents as a locale currency string, e.g. 12999 → "KSh 12,999" */
-export function formatPrice(cents: number, currency = "KES"): string {
-  return new Intl.NumberFormat("en-KE", { style: "currency", currency, minimumFractionDigits: 0 }).format(cents / 100);
+export function formatPrice(amount: number, currency = "KES"): string {
+  return new Intl.NumberFormat("en-KE", { style: "currency", currency, minimumFractionDigits: 0 })
+    .format(amount);  // ← no division
 }
 
 export function getProductById(id: string): Product | undefined {
