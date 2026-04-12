@@ -1,11 +1,12 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Package } from "lucide-react";
+import { ChevronRight, Loader2, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { OrderStatusBadge } from "@/components/ecommerce/OrderStatusBadge";
-import { mockOrders } from "@/data/orders";
+import { orderApi, type OrderResponse } from "@/api/orderApi";
 import { formatPrice } from "@/data/products";
 
 function formatDate(iso: string) {
@@ -17,16 +18,43 @@ function formatDate(iso: string) {
 }
 
 export function OrdersPage() {
+  const [orders, setOrders]   = useState<OrderResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
+
+  useEffect(() => {
+    orderApi.getMyOrders()
+      .then(({ data }) => setOrders(data))
+      .catch(() => setError("Failed to load orders. Please try again."))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-destructive p-6 text-center text-sm text-destructive">
+        {error}
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-6 py-8 space-y-6">
       <div>
         <h2 className="text-xl font-semibold tracking-tight">Order history</h2>
         <p className="text-sm text-muted-foreground">
-          {mockOrders.length} order{mockOrders.length !== 1 ? "s" : ""} placed
+          {orders.length} order{orders.length !== 1 ? "s" : ""} placed
         </p>
       </div>
 
-      {mockOrders.length === 0 ? (
+      {orders.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed py-16 text-center">
           <Package className="h-10 w-10 text-muted-foreground" />
           <div>
@@ -53,21 +81,21 @@ export function OrdersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockOrders.map((order) => (
+              {orders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
+                  <TableCell className="font-medium">#{order.id}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {formatDate(order.createdAt)}
+                    {order.createdAt ? formatDate(order.createdAt) : "—"}
                   </TableCell>
                   <TableCell>
-                    <OrderStatusBadge status={order.status} />
+                    <OrderStatusBadge status={order.orderStatus} />
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {order.items.reduce((s, i) => s + i.quantity, 0)} item
                     {order.items.reduce((s, i) => s + i.quantity, 0) !== 1 ? "s" : ""}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatPrice(order.total)}
+                    {formatPrice(order.totalAmount)}
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="sm" asChild>

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { authApi } from "@/api/authApi";
 
 interface User {
+  id: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -111,6 +112,7 @@ function getUserFromToken(token: string): User | null {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
     return {
+      id: payload.id ?? payload.userId ?? payload.sub,  // add this
       email: payload.sub,
       firstName: payload.firstName ?? "",
       lastName: payload.lastName ?? "",
