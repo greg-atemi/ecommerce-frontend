@@ -12,7 +12,7 @@ const STATUS_CONFIG: Record<
   cancelled:  { label: "Cancelled",  variant: "destructive" },
 };
 
-export function OrderStatusBadge({ status }: { status: OrderStatus }) {
-  const { label, variant } = STATUS_CONFIG[status];
-  return <Badge variant={variant}>{label}</Badge>;
+export function OrderStatusBadge({ status }: { status: string }) {
+  const config = STATUS_CONFIG[status.toLowerCase()] ?? { label: status, variant: "outline" as const };
+  return <Badge variant={config.variant}>{config.label}</Badge>;
 }

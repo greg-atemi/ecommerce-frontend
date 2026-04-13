@@ -2,24 +2,16 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+  Card, CardContent, CardDescription,
+  CardFooter, CardHeader, CardTitle,
 } from "@/components/ui/card";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Form, FormControl, FormField,
+  FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { useAuth } from "@/context/AuthContext";
 
@@ -34,11 +26,17 @@ export function LoginPage() {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Default to "/" instead of "/account"
-  const from =
-    (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/";
+  // ── Resolve redirect destination (three sources, in priority order) ───────
+  // 1. ?redirect=/checkout  (set by CheckoutPage)
+  // 2. location.state.from  (set by ProtectedRoute)
+  // 3. fallback: "/"
+  const redirectTo =
+    searchParams.get("redirect") ??
+    (location.state as { from?: { pathname: string } })?.from?.pathname ??
+    "/";
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -49,9 +47,8 @@ export function LoginPage() {
     setError(null);
     try {
       await login(data.email, data.password);
-      navigate(from, { replace: true }); // ✅ Redirects to "/" after login
+      navigate(redirectTo, { replace: true });
     } catch (err: any) {
-      // ✅ Surfaces backend errors to the user
       setError(err.message ?? "Invalid email or password");
     }
   }
@@ -69,7 +66,6 @@ export function LoginPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-
               <FormField
                 control={form.control}
                 name="email"
@@ -83,7 +79,6 @@ export function LoginPage() {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="password"
@@ -98,24 +93,27 @@ export function LoginPage() {
                 )}
               />
 
-              {/* ✅ Shows backend error e.g. wrong password */}
               {error && (
                 <p className="text-sm text-destructive text-center">{error}</p>
+              )}
+
+              {/* Show where user will land after login */}
+              {redirectTo !== "/" && (
+                <p className="text-xs text-muted-foreground text-center">
+                  You'll be redirected to{" "}
+                  <span className="font-medium">{redirectTo}</span> after signing in.
+                </p>
               )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Signing in…" : "Sign in"}
               </Button>
-
             </form>
           </Form>
         </CardContent>
 
         <CardFooter className="flex flex-col gap-2 text-center text-sm text-muted-foreground">
-          <Link
-            to="/forgot-password"
-            className="hover:text-foreground underline"
-          >
+          <Link to="/forgot-password" className="hover:text-foreground underline">
             Forgot your password?
           </Link>
           <p>

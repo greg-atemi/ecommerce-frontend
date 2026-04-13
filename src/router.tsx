@@ -9,6 +9,7 @@ import { CheckoutPage }      from "@/pages/CheckoutPage";
 import { LoginPage }         from "@/pages/LoginPage";
 import { RegisterPage }      from "@/pages/RegisterPage";
 import { AccountPage }       from "@/pages/AccountPage";
+import { AccountAddressesPage }     from "@/pages/AccountAddressesPage";
 import { OrdersPage }        from "@/pages/OrdersPage";
 import { OrderDetailPage }   from "@/pages/OrderDetailPage";
 import { CollectionsPage }   from "@/pages/CollectionsPage";
@@ -33,10 +34,11 @@ const router = createBrowserRouter([
       { path: "register",         element: <RegisterPage /> },
 
       // Protected
-      { path: "checkout",         element: <ProtectedRoute><CheckoutPage /></ProtectedRoute> },
       { path: "account",          element: <ProtectedRoute><AccountPage /></ProtectedRoute> },
       { path: "account/orders",   element: <ProtectedRoute><OrdersPage /></ProtectedRoute> },
+      { path: "account/address",   element: <ProtectedRoute><AccountAddressesPage /></ProtectedRoute> },
       { path: "account/orders/:orderId", element: <ProtectedRoute><OrderDetailPage /></ProtectedRoute> },
+      { path: "checkout",         element: <ProtectedRoute><CheckoutPage /></ProtectedRoute> },
       { path: "dashboard",        element: <ProtectedRoute><DashboardPage /></ProtectedRoute> },
 
       // 404
