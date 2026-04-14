@@ -48,4 +48,7 @@ export const orderApi = {
 
   getById: (id: number) =>
     apiClient.get<OrderResponse>(`/api/order/${id}`),
+
+  getAll: () =>
+    apiClient.get<OrderResponse[]>("/api/orders")
 };

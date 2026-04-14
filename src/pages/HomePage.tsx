@@ -1,13 +1,24 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/ecommerce/ProductCard";
-import { products } from "@/data/products";
-
-const CATEGORIES = ["Footwear", "Tops", "Bags", "Bottoms"];
+import { productApi, type Category } from "@/api/productApi";
+import type { Product } from "@/types";
 
 export function HomePage() {
-  const featured = products.slice(0, 4);
+  const [featured, setFeatured]     = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    productApi.getAll({ size: 4 })
+      .then(({ data }) => setFeatured(data.content.slice(0, 4)))
+      .catch(() => setFeatured([]));
+
+    productApi.getCategories()
+      .then(({ data }) => setCategories(data))
+      .catch(() => setCategories([]));
+  }, []);
 
   return (
     <div>
@@ -38,20 +49,26 @@ export function HomePage() {
       <section className="container py-16">
         <h2 className="text-2xl font-bold tracking-tight">Shop by category</h2>
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {CATEGORIES.map((cat) => (
-            <Link
-              key={cat}
-              to={`/products?category=${cat}`}
-              className="group flex aspect-square items-end rounded-lg bg-muted p-4 transition-colors hover:bg-muted/80"
-            >
-              <div>
-                <p className="font-semibold">{cat}</p>
-                <p className="flex items-center gap-1 text-sm text-muted-foreground group-hover:text-primary transition-colors">
-                  Shop <ArrowRight className="h-3 w-3" />
-                </p>
-              </div>
-            </Link>
-          ))}
+          {categories.length === 0 ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="aspect-square rounded-lg bg-muted animate-pulse" />
+            ))
+          ) : (
+            categories.map((cat) => (
+              <Link
+                key={cat.id}
+                to={`/products?category=${cat.name}`}
+                className="group flex aspect-square items-end rounded-lg bg-muted p-4 transition-colors hover:bg-muted/80"
+              >
+                <div>
+                  <p className="font-semibold">{cat.name}</p>
+                  <p className="flex items-center gap-1 text-sm text-muted-foreground group-hover:text-primary transition-colors">
+                    Shop <ArrowRight className="h-3 w-3" />
+                  </p>
+                </div>
+              </Link>
+            ))
+          )}
         </div>
       </section>
 
@@ -66,9 +83,15 @@ export function HomePage() {
           </Button>
         </div>
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {featured.length === 0 ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-lg border bg-muted animate-pulse aspect-[3/4]" />
+            ))
+          ) : (
+            featured.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))
+          )}
         </div>
       </section>
 
