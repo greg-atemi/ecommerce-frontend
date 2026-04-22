@@ -17,6 +17,10 @@ import { SalePage }          from "@/pages/SalePage";
 import { WishlistPage }      from "@/pages/WishlistPage";
 import { DashboardPage }     from "@/pages/DashboardPage";
 import { NotFoundPage }      from "@/pages/NotFoundPage";
+import { AdminLayout }       from "@/components/layout/AdminLayout";
+import { AdminRoute }        from "@/components/layout/AdminRoute";
+import { AdminOrdersPage }   from "@/pages/AdminOrdersPage";
+import { AdminProductsPage } from "@/pages/AdminProductsPage";
 
 const router = createBrowserRouter([
   {
@@ -40,6 +44,16 @@ const router = createBrowserRouter([
       { path: "account/orders/:orderId", element: <ProtectedRoute><OrderDetailPage /></ProtectedRoute> },
       { path: "checkout",         element: <ProtectedRoute><CheckoutPage /></ProtectedRoute> },
       { path: "dashboard",        element: <ProtectedRoute><DashboardPage /></ProtectedRoute> },
+
+      {
+        path: "admin",
+        element: <AdminRoute><AdminLayout /></AdminRoute>,
+        children: [
+          { index: true,        element: <DashboardPage /> },
+          { path: "orders",     element: <AdminOrdersPage /> },
+          { path: "products",   element: <AdminProductsPage /> },
+        ],
+      },
 
       // 404
       { path: "*", element: <NotFoundPage /> },

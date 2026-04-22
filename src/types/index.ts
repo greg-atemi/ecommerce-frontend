@@ -31,9 +31,11 @@ export interface CartItem {
 export interface User {
   id: string;
   email: string;
+  firstName: string;
+  lastName: string;
   name: string;
+  role: string;   // ← needed by AdminRoute
   avatarUrl?: string;
-  addresses: Address[];
 }
 
 export interface Address {
