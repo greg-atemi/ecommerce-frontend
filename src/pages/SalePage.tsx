@@ -1,10 +1,30 @@
+import { useState, useEffect } from "react";
 import { Tag } from "lucide-react";
 import { ProductCard } from "@/components/ecommerce/ProductCard";
-import { products } from "@/data/products";
+import { productApi } from "@/api/productApi";
 import { Badge } from "@/components/ui/badge";
+import type { Product } from "@/types";
 
 export function SalePage() {
-  const saleProducts = products.filter((p) => p.compareAtPrice !== undefined);
+  const [saleProducts, setSaleProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    productApi.getAll()
+      .then(({ data }) => {
+        const onSale = data.content.filter((p) => p.compareAtPrice !== undefined);
+        setSaleProducts(onSale);
+      })
+      .catch(() => setSaleProducts([]))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  // Calculate max discount for the badge
+  const maxDiscount = saleProducts.reduce((max, p) => {
+    if (!p.compareAtPrice) return max;
+    const discount = Math.round((1 - p.price / p.compareAtPrice) * 100);
+    return discount > max ? discount : max;
+  }, 0);
 
   return (
     <div className="container py-10">
@@ -14,20 +34,30 @@ export function SalePage() {
           <div className="flex items-center gap-2">
             <Tag className="h-5 w-5 text-destructive" />
             <h1 className="text-3xl font-bold tracking-tight">Sale</h1>
-            <Badge variant="destructive" className="text-sm">
-              Up to 20% off
-            </Badge>
+            {maxDiscount > 0 && (
+              <Badge variant="destructive" className="text-sm">
+                Up to {maxDiscount}% off
+              </Badge>
+            )}
           </div>
           <p className="mt-2 text-muted-foreground">
             Limited stock — grab these before they're gone.
           </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {saleProducts.length} item{saleProducts.length !== 1 ? "s" : ""}
-        </p>
+        {!isLoading && (
+          <p className="text-sm text-muted-foreground">
+            {saleProducts.length} item{saleProducts.length !== 1 ? "s" : ""}
+          </p>
+        )}
       </div>
 
-      {saleProducts.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-lg border bg-muted animate-pulse aspect-[3/4]" />
+          ))}
+        </div>
+      ) : saleProducts.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-24 text-center">
           <Tag className="h-10 w-10 text-muted-foreground" />
           <p className="text-muted-foreground">No sale items at the moment. Check back soon!</p>

@@ -56,6 +56,11 @@ export interface ProductsPage {
   number: number;
 }
 
+export interface Category {
+  id: number;
+  name: string;
+}
+
 export const productApi = {
   getAll: async (filters: ProductFilters = {}): Promise<{ data: ProductsPage }> => {
     const res = await apiClient.get<BackendProduct[]>("/api/products", { params: filters });
@@ -76,5 +81,5 @@ export const productApi = {
   },
 
   getCategories: () =>
-    apiClient.get<string[]>("/api/categories"),
+    apiClient.get<string[]>("/api/category"),
 };
