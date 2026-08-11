@@ -17,15 +17,18 @@ export function AdminLayout() {
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 border-r bg-muted/30 flex flex-col">
-        <div className="p-5 border-b">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Admin</p>
-          <p className="text-sm font-semibold mt-0.5">{user?.name}</p>
+      <aside className="sticky top-0 h-screen w-64 shrink-0 border-r bg-background flex flex-col">
+        <div className="p-4 border-b">
+          <h1 className="text-lg font-semibold">Admin</h1>
+          <p className="text-sm text-muted-foreground">{user?.name}</p>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
           {NAV.map(({ to, label, icon: Icon, exact }) => {
-            const active = exact ? pathname === to : pathname.startsWith(to);
+            const active = exact
+              ? pathname === to
+              : pathname.startsWith(to);
+
             return (
               <Link
                 key={to}
@@ -57,13 +60,14 @@ export function AdminLayout() {
             className="w-full justify-start gap-2.5 text-muted-foreground hover:text-destructive"
             onClick={logout}
           >
-            <LogOut className="h-4 w-4" /> Sign out
+            <LogOut className="h-4 w-4" />
+            Sign out
           </Button>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 min-w-0">
         <Outlet />
       </main>
     </div>
