@@ -38,7 +38,7 @@ export function HomePage() {
             <Button size="lg" asChild>
               <Link to="/products">Shop now</Link>
             </Button>
-            <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 hover:text-white" asChild>
+            <Button size="lg" variant="alternative" className="border-white/30 text-white hover:bg-white/10 hover:text-white" asChild>
               <Link to="/collections">View collections</Link>
             </Button>
           </div>
@@ -48,21 +48,36 @@ export function HomePage() {
       {/* Categories */}
       <section className="container py-16">
         <h2 className="text-2xl font-bold tracking-tight">Shop by category</h2>
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {categories.length === 0 ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="aspect-square rounded-lg bg-muted animate-pulse" />
+              <div key={i} className="aspect-[2/1] rounded-lg bg-muted animate-pulse" />
             ))
           ) : (
             categories.map((cat) => (
               <Link
                 key={cat.id}
                 to={`/products?category=${cat.name}`}
-                className="group flex aspect-square items-end rounded-lg bg-muted p-4 transition-colors hover:bg-muted/80"
+                className="group relative flex aspect-[2/1] items-end overflow-hidden rounded-lg"
               >
-                <div>
+                {/* Background image */}
+                {cat.image ? (
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-muted" />
+                )}
+
+                {/* Gradient overlay for text legibility */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+                {/* Content */}
+                <div className="relative p-4 text-white">
                   <p className="font-semibold">{cat.name}</p>
-                  <p className="flex items-center gap-1 text-sm text-muted-foreground group-hover:text-primary transition-colors">
+                  <p className="flex items-center gap-1 text-sm text-white/80 transition-colors group-hover:text-white">
                     Shop <ArrowRight className="h-3 w-3" />
                   </p>
                 </div>
