@@ -22,6 +22,7 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { AdminOrdersPage } from "@/pages/AdminOrdersPage";
 import { AdminProductsPage } from "@/pages/AdminProductsPage";
+import { AdminUsersPage } from "./pages/AdminUsersPage";
 
 const router = createBrowserRouter([
   /*
@@ -116,6 +117,7 @@ const router = createBrowserRouter([
       { index: true, element: <DashboardPage /> },
       { path: "orders", element: <AdminOrdersPage /> },
       { path: "products", element: <AdminProductsPage /> },
+      { path: "users", element: <AdminUsersPage /> },
     ],
   },
 ]);

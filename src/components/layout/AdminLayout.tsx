@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ShoppingCart, LogOut } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, LogOut, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ const NAV = [
   { to: "/admin",          label: "Dashboard",  icon: LayoutDashboard, exact: true },
   { to: "/admin/orders",   label: "Orders",     icon: ShoppingCart },
   { to: "/admin/products", label: "Products",   icon: Package },
+  { to: "/admin/users",    label: "Users",      icon: Users },
 ];
 
 export function AdminLayout() {

@@ -30,6 +30,37 @@ export interface AdminProductResponse {
   category?: { id: number; name: string };
 }
 
+export interface AdminUserResponse {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber?: string;
+  role: "ADMIN" | "USER";
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface AdminUserCreatePayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phoneNumber?: string;
+  role: "ADMIN" | "USER";
+  isActive: boolean;
+}
+
+export interface AdminUserUpdatePayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber?: string;
+  role: "ADMIN" | "USER";
+  isActive: boolean;
+  password?: string;
+}
+
 export const adminApi = {
   // ── Orders ──────────────────────────────────────────────────────────────
   getAllOrders: () =>
@@ -56,5 +87,19 @@ export const adminApi = {
   updateStock: (id: number, quantity: number) =>
     apiClient.patch<AdminProductResponse>(`/api/admin/products/${id}/stock`, null, {
       params: { quantity },
+    }),
+
+  getAllUsers: () =>
+    apiClient.get<AdminUserResponse[]>("/api/admin/users"),
+  
+  createUser: (payload: AdminUserCreatePayload) =>
+    apiClient.post<AdminUserResponse>("/api/admin/users", payload),
+
+  updateUser: (id: string, payload: AdminUserUpdatePayload) =>
+    apiClient.put<AdminUserResponse>(`/api/admin/users/${id}`, payload),
+
+  setActive: (id: string, active: boolean) =>
+    apiClient.patch<AdminUserResponse>(`/api/admin/users/${id}/status`, null, {
+      params: { active },
     }),
 };
