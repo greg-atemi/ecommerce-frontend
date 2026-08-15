@@ -59,6 +59,7 @@ export interface ProductsPage {
 export interface Category {
   id: number;
   name: string;
+  imageUrl: string | null;
 }
 
 export const productApi = {
@@ -81,5 +82,5 @@ export const productApi = {
   },
 
   getCategories: () =>
-    apiClient.get<string[]>("/api/category"),
+    apiClient.get<Category[]>("/api/category"),
 };

@@ -112,7 +112,7 @@ export function CollectionsPage() {
                   } overflow-hidden`}
                 >
                   <img
-                    src={meta.cover}
+                    src={cat.imageUrl}
                     alt={cat.name}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />

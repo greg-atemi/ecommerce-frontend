@@ -61,14 +61,14 @@ export function HomePage() {
                 className="group relative flex aspect-[2/1] items-end overflow-hidden rounded-lg"
               >
                 {/* Background image */}
-                {cat.image ? (
+                {cat.imageUrl ? (
                   <img
-                    src={cat.image}
+                    src={cat.imageUrl}
                     alt={cat.name}
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="absolute inset-0 bg-muted" />
+                  <div className="absolute inset-0 h-full w-full bg-muted" />
                 )}
 
                 {/* Gradient overlay for text legibility */}
