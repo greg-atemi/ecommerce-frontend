@@ -35,7 +35,7 @@ const productSchema = z.object({
   imageUrl:       z.string().url("Enter a valid URL").optional().or(z.literal("")),
   available:      z.boolean().default(true),
   quantity:       z.coerce.number().min(0),
-  categoryId:     z.coerce.number().min(1, "Select a category"),
+  categoryIds:    z.array(z.number()).min(1, "Select at least one category"),
 });
 
 const stockSchema = z.object({
@@ -58,7 +58,7 @@ export function AdminProductsPage() {
 
   const productForm = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", brand: "", description: "", price: 0, quantity: 0, available: true, categoryId: 0 },
+    defaultValues: { name: "", brand: "", description: "", price: 0, quantity: 0, available: true, categoryIds: [] },
   });
 
   const stockForm = useForm<StockForm>({
@@ -82,7 +82,7 @@ export function AdminProductsPage() {
 
   function openCreate() {
     setEditingProduct(null);
-    productForm.reset({ name: "", brand: "", description: "", price: 0, quantity: 0, available: true, categoryId: 0 });
+    productForm.reset({ name: "", brand: "", description: "", price: 0, quantity: 0, available: true, categoryIds: [] });
     setFormError(null);
     setProductDialog("create");
   }
@@ -94,7 +94,7 @@ export function AdminProductsPage() {
       description: product.description, price: product.price,
       compareAtPrice: product.compareAtPrice, imageUrl: product.imageUrl ?? "",
       available: product.available, quantity: product.quantity,
-      categoryId: product.category?.id ?? 0,
+      categoryIds: product.categories?.map((c) => c.id) ?? [],
     });
     setFormError(null);
     setProductDialog("edit");
@@ -179,7 +179,7 @@ export function AdminProductsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
-                <TableHead>Category</TableHead>
+                <TableHead>Categories</TableHead>
                 <TableHead className="text-right">Price</TableHead>
                 <TableHead className="text-right">Stock</TableHead>
                 <TableHead>Status</TableHead>
@@ -203,8 +203,18 @@ export function AdminProductsPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {product.category?.name ?? "—"}
+                  <TableCell>
+                    {product.categories && product.categories.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {product.categories.map((c) => (
+                          <Badge key={c.id} variant="outline" className="font-normal">
+                            {c.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <p className="font-medium text-sm">{formatPrice(product.price)}</p>
@@ -277,25 +287,45 @@ export function AdminProductsPage() {
                   <FormItem><FormLabel>Compare at price</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={productForm.control} name="quantity" render={({ field }) => (
-                  <FormItem><FormLabel>Stock quantity</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={productForm.control} name="categoryId" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" {...field}>
-                        <option value={0} disabled>Select category</option>
-                        {categories.map((c) => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
+              <FormField control={productForm.control} name="quantity" render={({ field }) => (
+                <FormItem><FormLabel>Stock quantity</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+
+              <FormField control={productForm.control} name="categoryIds" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categories</FormLabel>
+                  <FormControl>
+                    <div className="flex flex-wrap gap-3 rounded-md border border-input p-3">
+                      {categories.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No categories available.</p>
+                      ) : (
+                        categories.map((c) => {
+                          const checked = field.value.includes(c.id);
+                          return (
+                            <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4"
+                                checked={checked}
+                                onChange={(e) => {
+                                  field.onChange(
+                                    e.target.checked
+                                      ? [...field.value, c.id]
+                                      : field.value.filter((id) => id !== c.id)
+                                  );
+                                }}
+                              />
+                              {c.name}
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
               <FormField control={productForm.control} name="imageUrl" render={({ field }) => (
                 <FormItem><FormLabel>Image URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
               )} />

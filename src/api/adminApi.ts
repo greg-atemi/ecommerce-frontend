@@ -1,5 +1,6 @@
 import { apiClient } from "./client";
 import { type OrderResponse } from "./orderApi";
+import type { Category } from "./productApi";
 
 export interface AdminProductPayload {
   brand?: string;
@@ -10,7 +11,7 @@ export interface AdminProductPayload {
   imageUrl?: string;
   available: boolean;
   quantity: number;
-  categoryId: number;
+  categoryIds: number[];
   reviewCount?: number;
   rating?: number;
 }
@@ -27,7 +28,7 @@ export interface AdminProductResponse {
   quantity: number;
   reviewCount: number;
   rating: number;
-  category?: { id: number; name: string };
+  categories: { id: number; name: string }[];
 }
 
 export interface AdminUserResponse {
@@ -59,6 +60,11 @@ export interface AdminUserUpdatePayload {
   role: "ADMIN" | "USER";
   isActive: boolean;
   password?: string;
+}
+
+export interface CategoryPayload {
+  name: string;
+  imageUrl?: string;
 }
 
 export const adminApi = {
@@ -102,4 +108,16 @@ export const adminApi = {
     apiClient.patch<AdminUserResponse>(`/api/admin/users/${id}/status`, null, {
       params: { active },
     }),
+
+  getAllCategories: () =>
+    apiClient.get<Category[]>("/api/admin/categories"), // 404 — this GET was never created
+
+  createCategory: (payload: CategoryPayload) =>
+    apiClient.post<Category>("/api/admin/categories", payload),
+
+  updateCategory: (id: number, payload: CategoryPayload) =>
+    apiClient.put<Category>(`/api/admin/categories/${id}`, payload),
+
+  deleteCategory: (id: number) =>
+    apiClient.delete(`/api/admin/categories/${id}`),
 };

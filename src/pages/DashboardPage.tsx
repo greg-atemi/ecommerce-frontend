@@ -4,7 +4,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from "recharts";
-import { TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Package } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/table";
 import { orderApi, type OrderResponse } from "@/api/orderApi";
 import { paymentApi, type PaymentResponse } from "@/api/paymentApi";
+import { productApi, type Category } from "@/api/productApi";
+import { adminApi, type AdminProductResponse } from "@/api/adminApi";
 import { formatPrice } from "@/data/products";
 
 // ─── Chart colors ─────────────────────────────────────────────────────────────
@@ -103,12 +105,23 @@ function topProducts(orders: OrderResponse[]) {
   return Object.values(map).sort((a, b) => b.units - a.units).slice(0, 5);
 }
 
+// NOTE: a product can now belong to zero, one, or several categories.
+// Revenue is attributed in full to every category a product belongs to,
+// so these totals can exceed overall revenue for multi-category products —
+// this is a chosen simplification, not a bug. Switch to `item.subTotal / cats.length`
+// per category if you'd rather the totals reconcile exactly.
 function categoryRevenue(orders: OrderResponse[]) {
   const map: Record<string, number> = {};
   for (const order of orders) {
     for (const item of order.items) {
-      const cat = (item.product as any).category?.name ?? "Other";
-      map[cat] = (map[cat] ?? 0) + item.subTotal;
+      const cats = (item.product as any).categories as { id: number; name: string }[] | undefined;
+      if (!cats || cats.length === 0) {
+        map["Other"] = (map["Other"] ?? 0) + item.subTotal;
+        continue;
+      }
+      for (const cat of cats) {
+        map[cat.name] = (map[cat.name] ?? 0) + item.subTotal;
+      }
     }
   }
   return Object.entries(map).map(([category, revenue], i) => ({
@@ -116,20 +129,37 @@ function categoryRevenue(orders: OrderResponse[]) {
   }));
 }
 
+function productCountByCategory(products: AdminProductResponse[]) {
+  const map: Record<number, number> = {};
+  for (const product of products) {
+    const cats = (product as any).categories as { id: number; name: string }[] | undefined;
+    for (const cat of cats ?? []) {
+      map[cat.id] = (map[cat.id] ?? 0) + 1;
+    }
+  }
+  return map;
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 export function DashboardPage() {
-  const [orders, setOrders]     = useState<OrderResponse[]>([]);
-  const [payments, setPayments] = useState<PaymentResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [orders, setOrders]         = useState<OrderResponse[]>([]);
+  const [payments, setPayments]     = useState<PaymentResponse[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts]     = useState<AdminProductResponse[]>([]);
+  const [isLoading, setIsLoading]   = useState(true);
 
   useEffect(() => {
     Promise.all([
       orderApi.getAll(),
       paymentApi.getAll(),
+      productApi.getCategories(),
+      adminApi.getAllProducts(),
     ])
-      .then(([ordersRes, paymentsRes]) => {
+      .then(([ordersRes, paymentsRes, categoriesRes, productsRes]) => {
         setOrders(ordersRes.data);
         setPayments(paymentsRes.data);
+        setCategories(categoriesRes.data);
+        setProducts(productsRes.data);
       })
       .catch(() => {})
       .finally(() => setIsLoading(false));
@@ -143,6 +173,7 @@ export function DashboardPage() {
   const revenueByDay   = groupByDay(payments);
   const topProds       = topProducts(orders);
   const catRevenue     = categoryRevenue(orders);
+  const catCounts      = productCountByCategory(products);
   const recentOrders   = [...orders].sort((a, b) =>
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   ).slice(0, 5);
@@ -398,6 +429,43 @@ export function DashboardPage() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Categories grid */}
+      <div>
+        <div className="mb-3">
+          <h2 className="text-lg font-semibold tracking-tight">Categories</h2>
+          <p className="text-sm text-muted-foreground">{categories.length} categories</p>
+        </div>
+        {categories.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">No categories yet.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {categories.map((category) => (
+              <Card key={category.id} className="overflow-hidden">
+                <div className="aspect-video w-full bg-muted">
+                  {category.imageUrl ? (
+                    <img
+                      src={category.imageUrl}
+                      alt={category.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <Package className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                <CardContent className="p-3">
+                  <p className="font-medium text-sm truncate">{category.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {catCounts[category.id] ?? 0} product{(catCounts[category.id] ?? 0) === 1 ? "" : "s"}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
