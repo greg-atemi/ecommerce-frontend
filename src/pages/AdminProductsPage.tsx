@@ -182,7 +182,7 @@ export function AdminProductsPage() {
                 <TableHead>Categories</TableHead>
                 <TableHead className="text-right">Price</TableHead>
                 <TableHead className="text-right">Stock</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Availability</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -230,8 +230,8 @@ export function AdminProductsPage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={product.available ? "default" : "secondary"}>
-                      {product.available ? "Active" : "Inactive"}
+                    <Badge variant={product.isAvailable ? "default" : "secondary"}>
+                      {product.isAvailable ? "Available" : "Not Available"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -287,39 +287,40 @@ export function AdminProductsPage() {
                   <FormItem><FormLabel>Compare at price</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
-              <FormField control={productForm.control} name="quantity" render={({ field }) => (
-                <FormItem><FormLabel>Stock quantity</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-
               <FormField control={productForm.control} name="categoryIds" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Categories</FormLabel>
                   <FormControl>
-                    <div className="flex flex-wrap gap-3 rounded-md border border-input p-3">
-                      {categories.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No categories available.</p>
-                      ) : (
-                        categories.map((c) => {
-                          const checked = field.value.includes(c.id);
-                          return (
-                            <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                              <input
-                                type="checkbox"
-                                className="h-4 w-4"
-                                checked={checked}
-                                onChange={(e) => {
-                                  field.onChange(
-                                    e.target.checked
-                                      ? [...field.value, c.id]
-                                      : field.value.filter((id) => id !== c.id)
-                                  );
-                                }}
-                              />
-                              {c.name}
-                            </label>
-                          );
-                        })
-                      )}
+                    <div>
+                      <div className="flex flex-wrap gap-3 rounded-md border border-input p-3">
+                        {categories.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No categories available.</p>
+                        ) : (
+                          categories.map((c) => {
+                            const checked = field.value.includes(c.id);
+                            return (
+                              <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4"
+                                  checked={checked}
+                                  onChange={(e) => {
+                                    field.onChange(
+                                      e.target.checked
+                                        ? [...field.value, c.id]
+                                        : field.value.filter((id) => id !== c.id)
+                                    );
+                                  }}
+                                />
+                                {c.name}
+                              </label>
+                            );
+                          })
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-2">
+                        Create new categories <a href="/admin/categories" className="text-primary underline">Here</a>
+                      </div>
                     </div>
                   </FormControl>
                   <FormMessage />

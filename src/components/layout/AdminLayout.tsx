@@ -5,10 +5,11 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 
 const NAV = [
-  { to: "/admin",          label: "Dashboard",  icon: LayoutDashboard, exact: true },
-  { to: "/admin/orders",   label: "Orders",     icon: ShoppingCart },
-  { to: "/admin/products", label: "Products",   icon: Package },
-  { to: "/admin/users",    label: "Users",      icon: Users },
+  { to: "/admin",             label: "Dashboard",  icon: LayoutDashboard, exact: true },
+  { to: "/admin/orders",      label: "Orders",     icon: ShoppingCart },
+  { to: "/admin/products",    label: "Products",   icon: Package },
+  { to: "/admin/users",       label: "Users",      icon: Users },
+  { to: "/admin/categories",  label: "Categories", icon: Users },
 ];
 
 export function AdminLayout() {

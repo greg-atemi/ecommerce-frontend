@@ -24,7 +24,7 @@ export interface AdminProductResponse {
   imageUrl?: string;
   price: number;
   compareAtPrice?: number;
-  available: boolean;
+  isAvailable: boolean;
   quantity: number;
   reviewCount: number;
   rating: number;
