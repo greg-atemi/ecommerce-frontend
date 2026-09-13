@@ -1,23 +1,26 @@
 // ─── Product ───────────────────────────────────────────────────────────────
 export interface Product {
   id: string;
+  brand: string;
   name: string;
+  stock: number;
+  images: string[];
+  imageUrl: string | null;
   description: string;
   price: number;
-  compareAtPrice?: number;
-  images: string[];
-  category: string;
-  tags: string[];
+  compareAtPrice: number | null;
+  releaseDate: string | null;
+  isAvailable: boolean;
+  quantity: number;
+  reviewCount: number | null;
   rating: number;
-  reviewCount: number;
-  stock: number;
-  variants?: ProductVariant[];
+  categories: ProductCategory[];
 }
 
-export interface ProductVariant {
-  id: string;
-  name: string;       // e.g. "Size", "Color"
-  options: string[];  // e.g. ["S", "M", "L"]
+export interface ProductCategory {
+  id: number;
+  name: string;
+  imageUrl: string | null;
 }
 
 // ─── Cart ───────────────────────────────────────────────────────────────────

@@ -71,7 +71,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       <CardContent className="p-4">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {product.category}
+          {product.categories?.map((c) => c.name).join(" - ")}
         </p>
         <Link to={`/products/${product.id}`}>
           <h3 className="mt-1 font-medium leading-tight hover:underline">{product.name}</h3>

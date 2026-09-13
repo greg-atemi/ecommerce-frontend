@@ -7,35 +7,37 @@ interface BackendProduct {
   brand?: string;
   name: string;
   description: string;
-  imageUrl?: string | null;           // single URL from backend
+  imageUrl?: string | null;
   price: number;
-  compareAtPrice?: number | null;     // strikethrough price
+  compareAtPrice?: number | null;
   releaseDate?: string | null;
-  available: boolean;
+  isAvailable: boolean;                              // was `available`
   quantity: number;
   reviewCount?: number;
   rating?: number;
-  category?: { id: number; name: string } | null;
+  categories?: { id: number; name: string; imageUrl: string | null }[];  // was singular `category`
 }
 
 // ── Maps backend shape → frontend Product type ────────────────────────────────
 function normalize(p: BackendProduct): Product {
   return {
     id:             String(p.id),
+    brand:          p.brand ?? "",
     name:           p.name,
     description:    p.description,
     price:          p.price,
-    compareAtPrice: p.compareAtPrice ?? undefined,
-    // Wrap single imageUrl in an array; fall back to placeholder if missing
+    compareAtPrice: p.compareAtPrice ?? null,
     images:         p.imageUrl
                       ? [p.imageUrl]
                       : ["https://placehold.co/400x400?text=No+Image"],
-    category:       p.category?.name ?? "Uncategorised",
-    tags:           [],
+    imageUrl:       p.imageUrl ?? null,
+    categories:     p.categories ?? [],               // pass array through as-is
+    releaseDate:    p.releaseDate ?? null,
+    isAvailable:    p.isAvailable,                    // now actually mapped
     rating:         p.rating ?? 0,
     reviewCount:    p.reviewCount ?? 0,
+    quantity:       p.quantity,
     stock:          p.quantity,
-    variants:       [],
   };
 }
 

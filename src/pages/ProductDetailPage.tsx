@@ -98,7 +98,9 @@ export function ProductDetailPage() {
         {/* Info */}
         <div className="space-y-5">
           <div>
-            <Badge variant="secondary">{product.category}</Badge>
+            <Badge variant="secondary">
+              Category: {product.categories?.map((c) => c.name).join(" - ")}
+            </Badge>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">{product.name}</h1>
             <div className="mt-2 flex items-center gap-2">
               <div className="flex">
