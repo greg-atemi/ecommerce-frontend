@@ -19,7 +19,6 @@ export function ProductDetailPage() {
   const { addItem, toggleCart } = useCart();
 
   const [mainImg, setMainImg] = useState(0);
-  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [qty, setQty] = useState(1);
 
   // Fetch related products from the same category
@@ -132,37 +131,6 @@ export function ProductDetailPage() {
           </div>
 
           <Separator />
-
-          {/* Variants */}
-          {product.variants?.map((variant) => (
-            <div key={variant.id}>
-              <p className="text-sm font-medium mb-2">
-                {variant.name}
-                {selectedVariants[variant.name] && (
-                  <span className="ml-2 font-normal text-muted-foreground">
-                    — {selectedVariants[variant.name]}
-                  </span>
-                )}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {variant.options.map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() =>
-                      setSelectedVariants((prev) => ({ ...prev, [variant.name]: opt }))
-                    }
-                    className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
-                      selectedVariants[variant.name] === opt
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "hover:border-primary hover:bg-accent"
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
 
           {/* Qty + CTA */}
           <div className="flex items-center gap-3">
