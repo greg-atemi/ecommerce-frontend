@@ -16,7 +16,7 @@ export function HomePage() {
       .catch(() => setFeatured([]));
 
     productApi.getCategories()
-      .then(({ data }) => setCategories(data))
+      .then(({ data }) => setCategories(Array.isArray(data) ? data : [])) // Ensure it's an array
       .catch(() => setCategories([]));
   }, []);
 

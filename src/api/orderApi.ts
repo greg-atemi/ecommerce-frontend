@@ -1,8 +1,10 @@
 import { apiClient } from "./client";
+import type { OrderItemReview } from "@/api/reviewApi";
 
 export interface OrderItemPayload {
   productId: number;
   quantity: number;
+  review: OrderItemReview | null;
 }
 
 export interface PlaceOrderPayload {

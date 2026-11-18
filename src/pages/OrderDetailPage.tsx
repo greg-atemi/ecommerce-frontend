@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft, MapPin, CreditCard, Package, Loader2 } from "lucide-react";
+import { ChevronLeft, MapPin, CreditCard, Package, Loader2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { OrderStatusBadge } from "@/components/ecommerce/OrderStatusBadge";
 import { orderApi, type OrderResponse } from "@/api/orderApi";
 import { formatPrice } from "@/data/products";
+import { ReviewDialog } from "@/components/ecommerce/ReviewDialog";
+import type { OrderItemReview } from "@/api/reviewApi";
 
 const STATUS_STEPS = ["PROCESSING", "SHIPPED", "DELIVERED"];
 
@@ -31,194 +33,253 @@ function formatDate(iso: string) {
 
 export function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();
-  const [order, setOrder]     = useState<OrderResponse | null>(null);
+  const [order, setOrder] = useState<OrderResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [reviewItem, setReviewItem] = useState<OrderResponse["items"][number] | null>(null);
 
   useEffect(() => {
     if (!orderId) return;
     setIsLoading(true);
     orderApi.getById(Number(orderId))
-      .then(({ data }) => setOrder(data))
-      .catch(() => setError("Failed to load order. Please try again."))
-      .finally(() => setIsLoading(false));
+        .then(({ data }) => setOrder(data))
+        .catch(() => setError("Failed to load order. Please try again."))
+        .finally(() => setIsLoading(false));
   }, [orderId]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
     );
   }
 
   if (error || !order) {
     return (
-      <div className="space-y-4">
-        <Button variant="ghost" size="sm" className="-ml-2 gap-1 text-muted-foreground" asChild>
-          <Link to="/account/orders">
-            <ChevronLeft className="h-4 w-4" /> Back to orders
-          </Link>
-        </Button>
-        <Alert variant="destructive">
-          <AlertDescription>{error ?? "Order not found."}</AlertDescription>
-        </Alert>
-      </div>
+        <div className="space-y-4">
+          <Button variant="ghost" size="sm" className="-ml-2 gap-1 text-muted-foreground" asChild>
+            <Link to="/account/orders">
+              <ChevronLeft className="h-4 w-4" /> Back to orders
+            </Link>
+          </Button>
+          <Alert variant="destructive">
+            <AlertDescription>{error ?? "Order not found."}</AlertDescription>
+          </Alert>
+        </div>
     );
   }
 
   const shipping = order.totalAmount >= 5000 ? 0 : 350;
+  const isDelivered = order.orderStatus.toUpperCase() === "DELIVERED";
+
+  const handleReviewSaved = (itemId: number, review: OrderItemReview) => {
+    setOrder((prev) =>
+            prev && {
+              ...prev,
+              items: prev.items.map((i) => (i.id === itemId ? { ...i, review } : i)),
+            }
+    );
+  };
 
   return (
-    <div className="container mx-auto px-6 py-8 space-y-6">
+      <div className="container mx-auto px-6 py-8 space-y-6">
 
-      {/* Back + header */}
-      <div>
-        <Button variant="ghost" size="sm" className="-ml-2 mb-2 gap-1 text-muted-foreground" asChild>
-          <Link to="/account/orders">
-            <ChevronLeft className="h-4 w-4" /> Back to orders
-          </Link>
-        </Button>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight">Order #{order.id}</h2>
-            {order.createdAt && (
-              <p className="text-sm text-muted-foreground">{formatDate(order.createdAt)}</p>
-            )}
+        {/* Back + header */}
+        <div>
+          <Button variant="ghost" size="sm" className="-ml-2 mb-2 gap-1 text-muted-foreground" asChild>
+            <Link to="/account/orders">
+              <ChevronLeft className="h-4 w-4" /> Back to orders
+            </Link>
+          </Button>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">Order #{order.id}</h2>
+              {order.createdAt && (
+                  <p className="text-sm text-muted-foreground">{formatDate(order.createdAt)}</p>
+              )}
+            </div>
+            <OrderStatusBadge status={order.orderStatus} />
           </div>
-          <OrderStatusBadge status={order.orderStatus} />
         </div>
-      </div>
 
-      {/* Progress tracker */}
-      {order.orderStatus.toUpperCase() !== "CANCELLED" && (
-        <div className="rounded-lg border p-5 space-y-3">
-          <p className="text-sm font-medium">Fulfilment progress</p>
-          <Progress value={getProgressValue(order.orderStatus)} className="h-2" />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            {STATUS_STEPS.map((step) => (
-              <span
-                key={step}
-                className={
-                  STATUS_STEPS.indexOf(step) <=
-                  STATUS_STEPS.indexOf(order.orderStatus.toUpperCase())
-                    ? "font-medium text-foreground"
-                    : ""
-                }
-              >
+        {/* Progress tracker */}
+        {order.orderStatus.toUpperCase() !== "CANCELLED" && (
+            <div className="rounded-lg border p-5 space-y-3">
+              <p className="text-sm font-medium">Fulfilment progress</p>
+              <Progress value={getProgressValue(order.orderStatus)} className="h-2" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                {STATUS_STEPS.map((step) => (
+                    <span
+                        key={step}
+                        className={
+                          STATUS_STEPS.indexOf(step) <=
+                          STATUS_STEPS.indexOf(order.orderStatus.toUpperCase())
+                              ? "font-medium text-foreground"
+                              : ""
+                        }
+                    >
                 {step.charAt(0).toUpperCase() + step.slice(1).toLowerCase()}
               </span>
-            ))}
+                ))}
+              </div>
+            </div>
+        )}
+
+        <div className="grid gap-6 md:grid-cols-3">
+
+          {/* Items — spans 2 cols */}
+          <div className="md:col-span-2 space-y-4">
+            <h3 className="font-medium">Items ordered</h3>
+            <div className="rounded-lg border divide-y">
+              {order.items.length === 0 ? (
+                  <p className="p-4 text-sm text-muted-foreground">No items found.</p>
+              ) : (
+                  order.items.map((item) => (
+                      <div key={item.id} className="flex gap-4 p-4">
+                        {item.product.imageUrl && (
+                            <img
+                                src={item.product.imageUrl}
+                                alt={item.product.name}
+                                className="h-20 w-20 flex-shrink-0 rounded-md object-cover"
+                            />
+                        )}
+                        <div className="flex flex-1 flex-col justify-between">
+                          <div>
+                            <Link
+                                to={`/products/${item.product.id}`}
+                                className="font-medium hover:underline"
+                            >
+                              {item.product.name}
+                            </Link>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Qty {item.quantity}</span>
+                            <span className="font-medium">{formatPrice(item.subTotal)}</span>
+                          </div>
+
+                          {/* Review (delivered orders only) */}
+                          {isDelivered &&
+                              (item.review ? (
+                                  <div className="mt-2 flex items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex">
+                                        {Array.from({ length: 5 }).map((_, i) => (
+                                            <Star
+                                                key={i}
+                                                className={`h-3.5 w-3.5 ${
+                                                    i < item.review!.rating
+                                                        ? "fill-amber-400 text-amber-400"
+                                                        : "text-muted-foreground"
+                                                }`}
+                                            />
+                                        ))}
+                                      </div>
+                                      <span className="text-xs text-muted-foreground">
+                              Your review{item.review.anonymous && " · anonymous"}
+                            </span>
+                                    </div>
+                                    <Button variant="ghost" size="sm" onClick={() => setReviewItem(item)}>
+                                      Edit
+                                    </Button>
+                                  </div>
+                              ) : (
+                                  <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="mt-2 w-fit gap-1.5"
+                                      onClick={() => setReviewItem(item)}
+                                  >
+                                    <Star className="h-4 w-4" /> Write a review
+                                  </Button>
+                              ))}
+                        </div>
+                      </div>
+                  ))
+              )}
+            </div>
           </div>
-        </div>
-      )}
 
-      <div className="grid gap-6 md:grid-cols-3">
+          {/* Summary sidebar */}
+          <div className="space-y-4">
 
-        {/* Items — spans 2 cols */}
-        <div className="md:col-span-2 space-y-4">
-          <h3 className="font-medium">Items ordered</h3>
-          <div className="rounded-lg border divide-y">
-            {order.items.length === 0 ? (
-              <p className="p-4 text-sm text-muted-foreground">No items found.</p>
-            ) : (
-              order.items.map((item) => (
-                <div key={item.id} className="flex gap-4 p-4">
-                  {item.product.imageUrl && (
-                    <img
-                      src={item.product.imageUrl}
-                      alt={item.product.name}
-                      className="h-20 w-20 flex-shrink-0 rounded-md object-cover"
-                    />
-                  )}
-                  <div className="flex flex-1 flex-col justify-between">
-                    <div>
-                      <Link
-                        to={`/products/${item.product.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {item.product.name}
-                      </Link>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Qty {item.quantity}</span>
-                      <span className="font-medium">{formatPrice(item.subTotal)}</span>
-                    </div>
+            {/* Price breakdown */}
+            <div className="rounded-lg border p-4 space-y-3">
+              <h3 className="font-medium flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-muted-foreground" /> Payment summary
+              </h3>
+              <Separator />
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>{formatPrice(order.totalAmount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Shipping</span>
+                  <span>{shipping === 0 ? "Free" : formatPrice(shipping)}</span>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex justify-between font-semibold">
+                <span>Total</span>
+                <span>{formatPrice(order.totalAmount + shipping)}</span>
+              </div>
+            </div>
+
+            {/* Shipping address */}
+            {order.address && (
+                <div className="rounded-lg border p-4 space-y-2">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" /> Shipping address
+                  </h3>
+                  <div className="text-sm text-muted-foreground space-y-0.5">
+                    {order.address.localityArea && <p>{order.address.localityArea}</p>}
+                    {order.address.cityTown && <p>{order.address.cityTown}</p>}
+                    <p>{order.address.county}, {order.address.country}</p>
+                    {order.address.mapsPin && (
+                        <a
+                            href={order.address.mapsPin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                        >
+                          View on Maps
+                        </a>
+                    )}
                   </div>
                 </div>
-              ))
+            )}
+
+            {/* Actions */}
+            {isDelivered && (
+                <div className="rounded-lg border p-4 space-y-2">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <Package className="h-4 w-4 text-muted-foreground" /> Need help?
+                  </h3>
+                  <div className="space-y-2">
+                    <Button variant="outline" size="sm" className="w-full">
+                      Request return
+                    </Button>
+                    <Button variant="ghost" size="sm" className="w-full">
+                      Contact support
+                    </Button>
+                  </div>
+                </div>
             )}
           </div>
         </div>
 
-        {/* Summary sidebar */}
-        <div className="space-y-4">
-
-          {/* Price breakdown */}
-          <div className="rounded-lg border p-4 space-y-3">
-            <h3 className="font-medium flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-muted-foreground" /> Payment summary
-            </h3>
-            <Separator />
-            <div className="space-y-1.5 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatPrice(order.totalAmount)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Shipping</span>
-                <span>{shipping === 0 ? "Free" : formatPrice(shipping)}</span>
-              </div>
-            </div>
-            <Separator />
-            <div className="flex justify-between font-semibold">
-              <span>Total</span>
-              <span>{formatPrice(order.totalAmount + shipping)}</span>
-            </div>
-          </div>
-
-          {/* Shipping address */}
-          {order.address && (
-            <div className="rounded-lg border p-4 space-y-2">
-              <h3 className="font-medium flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" /> Shipping address
-              </h3>
-              <div className="text-sm text-muted-foreground space-y-0.5">
-                {order.address.localityArea && <p>{order.address.localityArea}</p>}
-                {order.address.cityTown && <p>{order.address.cityTown}</p>}
-                <p>{order.address.county}, {order.address.country}</p>
-                {order.address.mapsPin && (
-                  <a
-                    href={order.address.mapsPin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    View on Maps
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Actions */}
-          {order.orderStatus.toUpperCase() === "DELIVERED" && (
-            <div className="rounded-lg border p-4 space-y-2">
-              <h3 className="font-medium flex items-center gap-2">
-                <Package className="h-4 w-4 text-muted-foreground" /> Need help?
-              </h3>
-              <div className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full">
-                  Request return
-                </Button>
-                <Button variant="ghost" size="sm" className="w-full">
-                  Contact support
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Review dialog */}
+        {reviewItem && (
+            <ReviewDialog
+                key={reviewItem.id}
+                orderItemId={reviewItem.id}
+                productName={reviewItem.product.name}
+                existing={reviewItem.review}
+                onClose={() => setReviewItem(null)}
+                onSaved={handleReviewSaved}
+            />
+        )}
       </div>
-    </div>
   );
 }
